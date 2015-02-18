@@ -217,8 +217,18 @@ class FilePostRedirectGet extends AbstractPlugin
             }
 
             $input = $inputFilter->get($name);
-            if ($input instanceof InputFilterInterface && is_array($value)) {
-                $retVal = $this->traverseInputs($input, $value, $callback);
+          if ($input instanceof InputFilterInterface && is_array($value)) {
+
+                if ($input instanceof \Zend\InputFilter\CollectionInputFilter) {
+                    $retVal = null;
+                    foreach ($value as $k => $val) {
+                        $retVal2 = $this->traverseInputs($input->getInputFilter(), $val, $callback);
+                        if ($retVal2)
+                            $retVal[$k] = $retVal2;
+                    }
+                } else
+                    $retVal = $this->traverseInputs($input, $value, $callback);
+
                 if (null !== $retVal) {
                     $returnValues[$name] = $retVal;
                 }
@@ -248,7 +258,7 @@ class FilePostRedirectGet extends AbstractPlugin
             function ($input, $value) {
                 $messages = $input->getMessages();
                 if (is_array($value) && $input instanceof FileInput && empty($messages)) {
-                    $rawValue = $input->getRawValue();
+                    $rawValue = $value;
                     if (
                         (isset($rawValue['error']) && $rawValue['error'] !== UPLOAD_ERR_NO_FILE)
                         || (isset($rawValue[0]['error']) && $rawValue[0]['error'] !== UPLOAD_ERR_NO_FILE)
